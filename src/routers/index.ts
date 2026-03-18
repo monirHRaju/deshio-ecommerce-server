@@ -1,0 +1,28 @@
+import express from 'express';
+import { AiRoutes } from './ai.routes';
+import { AuthRoutes } from './auth.routes';
+import { CartRoutes } from './cart.routes';
+import { CategoryRoutes } from './category.routes';
+import { DashboardRoutes } from './dashboard.routes';
+import { OrderRoutes } from './order.routes';
+import { ProductRoutes } from './product.route';
+import { ReviewRoutes } from './review.routes';
+import { UserRoutes } from './user.router';
+
+const router = express.Router();
+
+const moduleRoutes = [
+  { path: '/auth', route: AuthRoutes },
+  { path: '/users', route: UserRoutes },
+  { path: '/categories', route: CategoryRoutes },
+  { path: '/products', route: ProductRoutes },
+  { path: '/reviews', route: ReviewRoutes },
+  { path: '/cart', route: CartRoutes },
+  { path: '/orders', route: OrderRoutes },
+  { path: '/dashboard', route: DashboardRoutes },
+  { path: '/ai', route: AiRoutes },
+];
+
+moduleRoutes.forEach((route) => router.use(route.path, route.route));
+
+export default router;

@@ -1,0 +1,167 @@
+import { Request, Response } from 'express';
+import Cart from '../models/cart.model';
+import Order from '../models/order.model';
+import Product from '../models/product.model';
+import User from '../models/user.model';
+import AppError from '../utils/AppError';
+import asyncHandler from '../utils/asyncHandler';
+import sendResponse from '../utils/sendResponse';
+
+// POST /api/v1/orders  { shippingAddress, paymentMethod }
+const createOrder = asyncHandler(async (req: Request, res: Response) => {
+  const { shippingAddress, paymentMethod = 'card' } = req.body;
+  if (!shippingAddress) throw new AppError('Shipping address is required', 400);
+
+  // Require verified email to place orders
+  const buyer = await User.findById(req.user!.id);
+  if (!buyer?.isVerified) {
+    throw new AppError('Please verify your email address before placing orders.', 403);
+  }
+
+  const cart = await Cart.findOne({ userId: req.user!.id }).populate<{
+    items: { productId: any; quantity: number; price: number }[];
+  }>('items.productId');
+
+  if (!cart || cart.items.length === 0) throw new AppError('Cart is empty', 400);
+
+  // Build order items and update stock
+  const orderItems = [];
+  for (const item of cart.items) {
+    const product = item.productId;
+    if (!product) throw new AppError('Product not found in cart', 404);
+    if (product.stock < item.quantity) {
+      throw new AppError(`Insufficient stock for ${product.title}`, 400);
+    }
+    orderItems.push({
+      productId: product._id,
+      quantity: item.quantity,
+      price: item.price,
+      title: product.title,
+      image: product.images?.[0] || '',
+    });
+    await Product.findByIdAndUpdate(product._id, {
+      $inc: { stock: -item.quantity, sold: item.quantity },
+    });
+  }
+
+  const order = await Order.create({
+    userId: req.user!.id,
+    items: orderItems,
+    totalAmount: cart.totalAmount,
+    shippingAddress,
+    paymentMethod,
+  });
+
+  // Clear cart after order
+  await Cart.findOneAndUpdate({ userId: req.user!.id }, { items: [], totalAmount: 0 });
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: 'Order placed successfully',
+    data: order,
+  });
+});
+
+// GET /api/v1/orders  (user: own orders | admin: all orders)
+const getOrders = asyncHandler(async (req: Request, res: Response) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Number(req.query.limit) || 10);
+  const skip = (page - 1) * limit;
+
+  const filter: Record<string, any> = {};
+  if (req.user!.role !== 'admin') filter.userId = req.user!.id;
+  if (req.query.status) filter.orderStatus = req.query.status;
+
+  const [orders, total] = await Promise.all([
+    Order.find(filter)
+      .populate('userId', 'name email avatar')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Order.countDocuments(filter),
+  ]);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Orders retrieved successfully',
+    data: orders,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
+});
+
+// GET /api/v1/orders/:id
+const getOrderById = asyncHandler(async (req: Request, res: Response) => {
+  const order = await Order.findById(req.params.id).populate('userId', 'name email');
+  if (!order) throw new AppError('Order not found', 404);
+
+  const isOwner = String(order.userId) === req.user!.id;
+  if (!isOwner && req.user!.role !== 'admin') {
+    throw new AppError('Not authorized to view this order', 403);
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order retrieved successfully',
+    data: order,
+  });
+});
+
+// PATCH /api/v1/orders/:id/status  (admin)
+const updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { orderStatus, paymentStatus } = req.body;
+
+  const update: Record<string, any> = {};
+  if (orderStatus) update.orderStatus = orderStatus;
+  if (paymentStatus) update.paymentStatus = paymentStatus;
+
+  const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true });
+  if (!order) throw new AppError('Order not found', 404);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order status updated',
+    data: order,
+  });
+});
+
+// PATCH /api/v1/orders/:id/cancel  (user — pending orders only)
+const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) throw new AppError('Order not found', 404);
+
+  if (String(order.userId) !== req.user!.id) {
+    throw new AppError('Not authorized to cancel this order', 403);
+  }
+  if (order.orderStatus !== 'pending') {
+    throw new AppError('Only pending orders can be cancelled', 400);
+  }
+
+  // Restore stock
+  for (const item of order.items) {
+    await Product.findByIdAndUpdate(item.productId, {
+      $inc: { stock: item.quantity, sold: -item.quantity },
+    });
+  }
+
+  order.orderStatus = 'cancelled';
+  await order.save();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order cancelled successfully',
+    data: order,
+  });
+});
+
+export const orderControllers = {
+  createOrder,
+  getOrders,
+  getOrderById,
+  updateOrderStatus,
+  cancelOrder,
+};
