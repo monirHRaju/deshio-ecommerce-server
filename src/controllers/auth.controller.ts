@@ -52,9 +52,10 @@ const register = asyncHandler(async (req: Request, res: Response) => {
   });
 
   // Send verification email (non-blocking)
-  sendVerificationEmail(name, email, verificationToken).catch((err) =>
-    console.error('[Email] Verification email failed:', err.message)
-  );
+  sendVerificationEmail(name, email, verificationToken).catch((err) => {
+    console.error('[Email] Verification email failed:', err.message);
+    console.error('[Email] Full error:', err);
+  });
 
   const payload: JwtPayload = { id: String(user._id), email: user.email, role: user.role };
   const { accessToken, refreshToken } = generateTokens(payload);
@@ -235,7 +236,7 @@ const googleAuth = (req: Request, res: Response, next: any) => {
   passportInstance.authenticate('google', { scope: ['profile', 'email'], session: false })(req, res, next);
 };
 
-const googleCallback = (req: Request, res: Response, next: any) => {
+const googleCallback = (req: Request, res: Response, _next: any) => {
   passportInstance.authenticate('google', { session: false, failureRedirect: `${config.client_url}/login?error=google_failed` })(
     req,
     res,
@@ -252,7 +253,7 @@ const facebookAuth = (req: Request, res: Response, next: any) => {
   passportInstance.authenticate('facebook', { scope: ['email'], session: false })(req, res, next);
 };
 
-const facebookCallback = (req: Request, res: Response, next: any) => {
+const facebookCallback = (req: Request, res: Response, _next: any) => {
   passportInstance.authenticate('facebook', { session: false, failureRedirect: `${config.client_url}/login?error=facebook_failed` })(
     req,
     res,
