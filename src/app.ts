@@ -9,13 +9,22 @@ const app: Application = express();
 // Parsers
 app.use(express.json());
 
-// CORS configuration
-const corsOptions = {
-  origin: process.env.PUBLIC_URL || 'http://localhost:3000',
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+// CORS — allow all configured origins (comma-separated PUBLIC_URL supports multiple)
+const allowedOrigins = (process.env.PUBLIC_URL || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // allow server-to-server (no origin) and whitelisted origins
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+    optionsSuccessStatus: 200,
+  })
+);
 
 // Application routes
 app.use('/api/v1', router);
