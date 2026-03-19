@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import Review from '../models/review.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
 import { geminiModel } from '../utils/gemini';
@@ -123,8 +124,53 @@ No explanation, just the JSON object.`;
   });
 });
 
+// POST /api/v1/ai/summarize-reviews  (public — no auth required)
+// Body: { productId }
+const summarizeReviews = asyncHandler(async (req: Request, res: Response) => {
+  const { productId } = req.body;
+  if (!productId) throw new AppError('productId is required', 400);
+
+  const reviews = await Review.find({ productId }).populate('userId', 'name').lean();
+
+  if (reviews.length === 0) {
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'No reviews to summarize',
+      data: { summary: 'No customer reviews yet. Be the first to share your experience!', reviewCount: 0 },
+    });
+  }
+
+  const avgRating = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+  const reviewLines = reviews
+    .map((r) => `★${r.rating}/5 — "${r.comment}"`)
+    .join('\n');
+
+  const prompt = `You are an AI assistant for an electronics e-commerce store.
+Analyze these ${reviews.length} customer reviews (avg rating: ${avgRating}/5) and write a concise, balanced AI summary (3–4 sentences) to help a buyer decide.
+- Start with the overall sentiment
+- Highlight the top 2 pros customers mention
+- Mention any notable concern if present
+- End with a recommendation sentence
+Be objective, helpful, and conversational. Do NOT use bullet points.
+
+Reviews:
+${reviewLines}`;
+
+  const result = await geminiModel.generateContent(prompt);
+  const summary = result.response.text().trim();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Review summary generated',
+    data: { summary, reviewCount: reviews.length, avgRating: Number(avgRating) },
+  });
+});
+
 export const aiControllers = {
   generateProductDescription,
   generateProductTags,
   smartSearch,
+  summarizeReviews,
 };

@@ -4,8 +4,11 @@ import authenticate from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
-router.use(authenticate);
+// Public (no auth required)
+router.post('/summarize-reviews', aiControllers.summarizeReviews);
 
+// Protected
+router.use(authenticate);
 router.post('/generate-description', aiControllers.generateProductDescription);
 router.post('/generate-tags', aiControllers.generateProductTags);
 router.post('/smart-search', aiControllers.smartSearch);

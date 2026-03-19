@@ -43,10 +43,13 @@ app.use((_req: Request, _res: Response, next: NextFunction) => {
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.isOperational ? err.message : 'Something went wrong';
+  // Always log non-operational errors so they're visible in the server terminal
+  if (!err.isOperational) console.error('[Error]', err);
   res.status(statusCode).json({
     success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    // Expose real message in dev for easier debugging
+    ...(process.env.NODE_ENV !== 'production' && { debug: err.message, stack: err.stack }),
   });
 });
 
