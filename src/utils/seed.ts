@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import config from '../config';
 import Category from '../models/category.model';
+import DeliveryZone from '../models/deliveryZone.model';
 import Order from '../models/order.model';
 import Product from '../models/product.model';
 import Review from '../models/review.model';
@@ -17,6 +18,7 @@ const seed = async () => {
     Product.deleteMany({}),
     Review.deleteMany({}),
     Order.deleteMany({}),
+    DeliveryZone.deleteMany({}),
   ]);
   console.log('Cleared existing data');
 
@@ -415,6 +417,14 @@ const seed = async () => {
 
   await Order.insertMany(orderData);
   console.log('Orders created');
+
+  // ─── Delivery Zones ────────────────────────────────────────────────────────
+  await DeliveryZone.create([
+    { name: 'Dhaka City', charge: 80, estimatedDays: '1-2 days', isActive: true },
+    { name: 'Outside Dhaka', charge: 120, estimatedDays: '2-4 days', isActive: true },
+    { name: 'International', charge: 500, estimatedDays: '7-14 days', isActive: true },
+  ]);
+  console.log('Delivery zones created');
 
   console.log('\n✅ Seed completed successfully!');
   console.log('Demo credentials:');

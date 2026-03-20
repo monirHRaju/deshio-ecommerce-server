@@ -35,6 +35,11 @@ const orderSchema = new Schema<IOrder>(
       enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
       default: 'pending',
     },
+    couponCode: { type: String },
+    couponDiscount: { type: Number, default: 0 },
+    deliveryZoneId: { type: Schema.Types.ObjectId, ref: 'DeliveryZone' },
+    deliveryCharge: { type: Number, default: 0 },
+    orderNote: { type: String },
   },
   { timestamps: true }
 );

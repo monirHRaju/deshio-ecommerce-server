@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Cart from '../models/cart.model';
+import Coupon from '../models/coupon.model';
+import DeliveryZone from '../models/deliveryZone.model';
 import Order from '../models/order.model';
 import Product from '../models/product.model';
 import User from '../models/user.model';
@@ -7,9 +9,9 @@ import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
 import sendResponse from '../utils/sendResponse';
 
-// POST /api/v1/orders  { shippingAddress, paymentMethod }
+// POST /api/v1/orders  { shippingAddress, paymentMethod, deliveryZoneId?, couponCode?, orderNote? }
 const createOrder = asyncHandler(async (req: Request, res: Response) => {
-  const { shippingAddress, paymentMethod = 'card' } = req.body;
+  const { shippingAddress, paymentMethod = 'card', deliveryZoneId, couponCode, orderNote } = req.body;
   if (!shippingAddress) throw new AppError('Shipping address is required', 400);
 
   // Require verified email to place orders
@@ -44,12 +46,50 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
+  const itemsTotal = cart.totalAmount;
+
+  // ── Delivery zone ──────────────────────────────────────────────────────────
+  let deliveryCharge = 0;
+  let resolvedDeliveryZoneId: any = undefined;
+  if (deliveryZoneId) {
+    const zone = await DeliveryZone.findById(deliveryZoneId);
+    if (!zone || !zone.isActive) throw new AppError('Selected delivery zone is unavailable', 400);
+    deliveryCharge = zone.charge;
+    resolvedDeliveryZoneId = zone._id;
+  }
+
+  // ── Coupon ─────────────────────────────────────────────────────────────────
+  let couponDiscount = 0;
+  let appliedCouponCode: string | undefined;
+  if (couponCode) {
+    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+    if (!coupon || !coupon.isActive) throw new AppError('Invalid or inactive coupon code', 400);
+    if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new AppError('Coupon has expired', 400);
+    if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) throw new AppError('Coupon usage limit reached', 400);
+    if (itemsTotal < coupon.minOrderAmount) throw new AppError(`Minimum order amount for this coupon is ${coupon.minOrderAmount}`, 400);
+
+    couponDiscount = coupon.type === 'percent'
+      ? Math.min((itemsTotal * coupon.value) / 100, itemsTotal)
+      : Math.min(coupon.value, itemsTotal);
+    appliedCouponCode = coupon.code;
+
+    // Increment usage count
+    await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+  }
+
+  const totalAmount = Math.max(0, itemsTotal + deliveryCharge - couponDiscount);
+
   const order = await Order.create({
     userId: req.user!.id,
     items: orderItems,
-    totalAmount: cart.totalAmount,
+    totalAmount,
     shippingAddress,
     paymentMethod,
+    deliveryZoneId: resolvedDeliveryZoneId,
+    deliveryCharge,
+    couponCode: appliedCouponCode,
+    couponDiscount,
+    orderNote: orderNote || undefined,
   });
 
   // Clear cart after order

@@ -106,6 +106,34 @@ export interface IOrder {
   paymentMethod: string;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  couponCode?: string;
+  couponDiscount?: number;
+  deliveryZoneId?: Types.ObjectId;
+  deliveryCharge?: number;
+  orderNote?: string;
+}
+
+// ─── Coupon ───────────────────────────────────────────────────────────────────
+export interface ICoupon {
+  _id?: Types.ObjectId;
+  code: string;
+  description?: string;
+  type: 'percent' | 'fixed';
+  value: number;
+  minOrderAmount: number;
+  maxUses: number;
+  usedCount: number;
+  expiresAt?: Date;
+  isActive: boolean;
+}
+
+// ─── Delivery Zone ────────────────────────────────────────────────────────────
+export interface IDeliveryZone {
+  _id?: Types.ObjectId;
+  name: string;
+  charge: number;
+  estimatedDays: string;
+  isActive: boolean;
 }
 
 // ─── JWT ─────────────────────────────────────────────────────────────────────

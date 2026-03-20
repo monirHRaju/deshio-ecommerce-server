@@ -3,7 +3,9 @@ import { AiRoutes } from './ai.routes';
 import { AuthRoutes } from './auth.routes';
 import { CartRoutes } from './cart.routes';
 import { CategoryRoutes } from './category.routes';
+import { CouponRoutes } from './coupon.routes';
 import { DashboardRoutes } from './dashboard.routes';
+import { DeliveryZoneRoutes } from './deliveryZone.routes';
 import { OrderRoutes } from './order.routes';
 import { ProductRoutes } from './product.route';
 import { ReviewRoutes } from './review.routes';
@@ -19,6 +21,8 @@ const moduleRoutes = [
   { path: '/reviews', route: ReviewRoutes },
   { path: '/cart', route: CartRoutes },
   { path: '/orders', route: OrderRoutes },
+  { path: '/coupons', route: CouponRoutes },
+  { path: '/delivery-zones', route: DeliveryZoneRoutes },
   { path: '/dashboard', route: DashboardRoutes },
   { path: '/ai', route: AiRoutes },
 ];
