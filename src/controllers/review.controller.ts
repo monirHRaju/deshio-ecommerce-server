@@ -69,6 +69,20 @@ const getProductReviews = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+// GET /api/v1/reviews/my  — current user's reviews with product info
+const getMyReviews = asyncHandler(async (req: Request, res: Response) => {
+  const reviews = await Review.find({ userId: req.user!.id })
+    .populate('productId', 'title images')
+    .sort({ createdAt: -1 });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Your reviews retrieved successfully',
+    data: reviews,
+  });
+});
+
 // PATCH /api/v1/reviews/:id
 const updateReview = asyncHandler(async (req: Request, res: Response) => {
   const review = await Review.findById(req.params.id);
@@ -112,4 +126,4 @@ const deleteReview = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export const reviewControllers = { addReview, getProductReviews, updateReview, deleteReview };
+export const reviewControllers = { addReview, getProductReviews, getMyReviews, updateReview, deleteReview };

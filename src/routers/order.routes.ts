@@ -5,6 +5,9 @@ import authorize from '../middlewares/role.middleware';
 
 const router = express.Router();
 
+// Public — guest order tracking (no auth required)
+router.get('/track/:orderNumber', orderControllers.trackOrder);
+
 router.use(authenticate);
 
 router.post('/', orderControllers.createOrder);

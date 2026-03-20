@@ -198,10 +198,42 @@ const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+// GET /api/v1/orders/track/:orderNumber  (public — no auth, limited info)
+const trackOrder = asyncHandler(async (req: Request, res: Response) => {
+  const order = await Order.findOne({ orderNumber: req.params.orderNumber.toUpperCase() })
+    .populate('deliveryZoneId', 'name charge estimatedDays');
+
+  if (!order) throw new AppError('Order not found. Please check your order number.', 404);
+
+  // Return only tracking-relevant info — omit shippingAddress and userId for privacy
+  const tracking = {
+    orderNumber: order.orderNumber,
+    orderStatus: order.orderStatus,
+    paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    totalAmount: order.totalAmount,
+    deliveryCharge: order.deliveryCharge,
+    couponDiscount: order.couponDiscount,
+    orderNote: order.orderNote,
+    deliveryZone: order.deliveryZoneId,
+    items: order.items.map((i) => ({ title: i.title, quantity: i.quantity, image: i.image, price: i.price })),
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  };
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order tracking info retrieved',
+    data: tracking,
+  });
+});
+
 export const orderControllers = {
   createOrder,
   getOrders,
   getOrderById,
+  trackOrder,
   updateOrderStatus,
   cancelOrder,
 };
