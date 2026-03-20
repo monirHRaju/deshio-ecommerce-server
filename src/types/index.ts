@@ -111,6 +111,8 @@ export interface IOrder {
   deliveryZoneId?: Types.ObjectId;
   deliveryCharge?: number;
   orderNote?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // ─── Coupon ───────────────────────────────────────────────────────────────────

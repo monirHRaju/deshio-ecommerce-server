@@ -200,7 +200,7 @@ const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
 
 // GET /api/v1/orders/track/:orderNumber  (public — no auth, limited info)
 const trackOrder = asyncHandler(async (req: Request, res: Response) => {
-  const order = await Order.findOne({ orderNumber: req.params.orderNumber.toUpperCase() })
+  const order = await Order.findOne({ orderNumber: String(req.params.orderNumber).toUpperCase() })
     .populate('deliveryZoneId', 'name charge estimatedDays');
 
   if (!order) throw new AppError('Order not found. Please check your order number.', 404);
