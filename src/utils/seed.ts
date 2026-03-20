@@ -43,48 +43,46 @@ const seed = async () => {
   ]);
   console.log('Users created');
 
-  // ─── Categories ───────────────────────────────────────────────────────
-  const categoryData = [
-    {
-      name: 'Smartphones',
-      slug: 'smartphones',
-      description: 'Latest mobile phones and accessories',
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
-    },
-    {
-      name: 'Laptops',
-      slug: 'laptops',
-      description: 'Powerful laptops for work and gaming',
-      image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
-    },
-    {
-      name: 'Headphones',
-      slug: 'headphones',
-      description: 'Premium audio headphones and earbuds',
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
-    },
-    {
-      name: 'Cameras',
-      slug: 'cameras',
-      description: 'Digital cameras and photography equipment',
-      image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400',
-    },
-    {
-      name: 'Tablets',
-      slug: 'tablets',
-      description: 'iPad, Android tablets and e-readers',
-      image: 'https://images.unsplash.com/photo-1544244015-0df4592c21b6?w=400',
-    },
-    {
-      name: 'Smart Watches',
-      slug: 'smart-watches',
-      description: 'Fitness trackers and smartwatches',
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
-    },
+  // ─── Categories (Main) ────────────────────────────────────────────────
+  const mainCategoryData = [
+    { name: 'Smartphones', slug: 'smartphones', description: 'Latest mobile phones', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400' },
+    { name: 'Laptops',     slug: 'laptops',     description: 'Laptops for work and gaming', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400' },
+    { name: 'Headphones',  slug: 'headphones',  description: 'Premium audio devices', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400' },
+    { name: 'Cameras',     slug: 'cameras',     description: 'Photography equipment', image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400' },
+    { name: 'Tablets',     slug: 'tablets',     description: 'Tablets and e-readers', image: 'https://images.unsplash.com/photo-1544244015-0df4592c21b6?w=400' },
+    { name: 'Smart Watches', slug: 'smart-watches', description: 'Fitness trackers and smartwatches', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400' },
   ];
 
-  const categories = await Category.create(categoryData);
-  const catMap = Object.fromEntries(categories.map((c) => [c.slug, c._id]));
+  const mainCategories = await Category.create(mainCategoryData);
+  const catMap = Object.fromEntries(mainCategories.map((c) => [c.slug, c._id]));
+
+  // ─── Sub-Categories ────────────────────────────────────────────────────
+  await Category.create([
+    // Smartphones
+    { name: 'iPhones',        slug: 'iphones',         parentCategory: catMap['smartphones'] },
+    { name: 'Android Phones', slug: 'android-phones',  parentCategory: catMap['smartphones'] },
+    { name: 'Feature Phones', slug: 'feature-phones',  parentCategory: catMap['smartphones'] },
+    // Laptops
+    { name: 'Gaming Laptops',   slug: 'gaming-laptops',   parentCategory: catMap['laptops'] },
+    { name: 'Ultrabooks',       slug: 'ultrabooks',        parentCategory: catMap['laptops'] },
+    { name: 'Business Laptops', slug: 'business-laptops',  parentCategory: catMap['laptops'] },
+    // Headphones
+    { name: 'Over-Ear',      slug: 'over-ear',       parentCategory: catMap['headphones'] },
+    { name: 'Earbuds',       slug: 'earbuds',         parentCategory: catMap['headphones'] },
+    { name: 'Neckbands',     slug: 'neckbands',       parentCategory: catMap['headphones'] },
+    // Cameras
+    { name: 'Mirrorless',    slug: 'mirrorless',      parentCategory: catMap['cameras'] },
+    { name: 'DSLR',          slug: 'dslr',            parentCategory: catMap['cameras'] },
+    { name: 'Action Cameras', slug: 'action-cameras', parentCategory: catMap['cameras'] },
+    // Tablets
+    { name: 'iPads',            slug: 'ipads',            parentCategory: catMap['tablets'] },
+    { name: 'Android Tablets',  slug: 'android-tablets',  parentCategory: catMap['tablets'] },
+    { name: 'E-Readers',        slug: 'e-readers',         parentCategory: catMap['tablets'] },
+    // Smart Watches
+    { name: 'Smartwatches',    slug: 'smartwatches',     parentCategory: catMap['smart-watches'] },
+    { name: 'Fitness Trackers', slug: 'fitness-trackers', parentCategory: catMap['smart-watches'] },
+    { name: 'Smart Bands',     slug: 'smart-bands',      parentCategory: catMap['smart-watches'] },
+  ]);
   console.log('Categories created');
 
   // ─── Products ─────────────────────────────────────────────────────────

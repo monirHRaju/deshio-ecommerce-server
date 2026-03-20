@@ -5,6 +5,7 @@ import authorize from '../middlewares/role.middleware';
 
 const router = express.Router();
 
+router.get('/tree', categoryControllers.getCategoryTree);
 router.get('/', categoryControllers.getAllCategories);
 router.get('/:id', categoryControllers.getCategoryById);
 router.post('/', authenticate, authorize('admin'), categoryControllers.createCategory);

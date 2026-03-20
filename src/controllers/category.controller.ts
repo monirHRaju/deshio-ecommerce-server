@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Category from '../models/category.model';
+import Product from '../models/product.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
 import sendResponse from '../utils/sendResponse';
@@ -25,6 +26,31 @@ const createCategory = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     message: 'Category created successfully',
     data: category,
+  });
+});
+
+// GET /api/v1/categories/tree  — main categories with children + brands
+const getCategoryTree = asyncHandler(async (_req: Request, res: Response) => {
+  const all = await Category.find().lean();
+  const mains = all.filter((c) => !c.parentCategory);
+  const subs = all.filter((c) => c.parentCategory);
+
+  const tree = await Promise.all(
+    mains.map(async (main) => {
+      const children = subs.filter(
+        (s) => s.parentCategory!.toString() === (main._id as any).toString()
+      );
+      const catIds = [main._id, ...children.map((c) => c._id)];
+      const brands: string[] = await Product.distinct('brand', { category: { $in: catIds } });
+      return { ...main, children, brands };
+    })
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Category tree retrieved successfully',
+    data: tree,
   });
 });
 
@@ -93,6 +119,7 @@ const deleteCategory = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const categoryControllers = {
+  getCategoryTree,
   createCategory,
   getAllCategories,
   getCategoryById,
