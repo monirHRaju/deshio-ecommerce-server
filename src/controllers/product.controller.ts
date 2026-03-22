@@ -27,9 +27,10 @@ const getAllProducts = asyncHandler(async (req: Request, res: Response) => {
 
   const filter: Record<string, any> = {};
 
-  // Search
+  // Search — regex for partial/substring matching (case-insensitive)
   if (req.query.search) {
-    filter.$text = { $search: req.query.search as string };
+    const regex = { $regex: req.query.search as string, $options: 'i' };
+    filter.$or = [{ title: regex }, { description: regex }, { brand: regex }, { tags: regex }];
   }
 
   // Filters
