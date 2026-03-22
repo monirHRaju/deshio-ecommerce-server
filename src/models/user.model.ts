@@ -8,7 +8,7 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true, default: 'user' },
     email: { type: String, required: true, unique: true },
     password: { type: String, minlength: 6, select: false }, // optional for OAuth users
-    role: { type: String, required: true, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, required: true, enum: ['user', 'admin', 'super-admin'], default: 'user' },
     avatar: {
       type: String,
       default: function () {

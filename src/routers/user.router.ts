@@ -11,6 +11,7 @@ router.patch('/me', authenticate, userControllers.updateProfile);
 
 // Admin only routes
 router.get('/', authenticate, authorize('admin'), userControllers.getAllUsers);
+router.post('/', authenticate, authorize('super-admin'), userControllers.createAdminUser);
 router.get('/:id', authenticate, authorize('admin'), userControllers.getUserById);
 router.patch('/role', authenticate, authorize('admin'), userControllers.updateUserRole);
 router.delete('/:id', authenticate, authorize('admin'), userControllers.deleteUser);

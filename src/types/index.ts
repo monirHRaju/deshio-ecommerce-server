@@ -13,7 +13,7 @@ export interface IUser {
   name: string;
   email: string;
   password?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'super-admin';
   avatar?: string;
   phone?: string;
   address?: IAddress;
@@ -142,7 +142,7 @@ export interface IDeliveryZone {
 export interface JwtPayload {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'super-admin';
 }
 
 // ─── Express augmentation ────────────────────────────────────────────────────

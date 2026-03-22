@@ -105,23 +105,68 @@ const getUserById = asyncHandler(async (req: Request, res: Response) => {
 // PATCH /api/v1/users/role  (admin)
 const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
   const { userId, role } = req.body;
-  if (!['user', 'admin'].includes(role)) throw new AppError('Invalid role', 400);
+  if (!['user', 'admin', 'super-admin'].includes(role)) throw new AppError('Invalid role', 400);
 
-  const user = await User.findByIdAndUpdate(userId, { role }, { new: true });
-  if (!user) throw new AppError('User not found', 404);
+  // Only super-admin can assign the super-admin role
+  if (role === 'super-admin' && req.user!.role !== 'super-admin') {
+    throw new AppError('Only a super-admin can assign the super-admin role', 403);
+  }
+
+  const target = await User.findById(userId);
+  if (!target) throw new AppError('User not found', 404);
+
+  // super-admin accounts cannot be demoted by regular admins
+  if (target.role === 'super-admin' && req.user!.role !== 'super-admin') {
+    throw new AppError('Cannot modify a super-admin account', 403);
+  }
+
+  target.role = role;
+  await target.save();
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'User role updated successfully',
+    data: target,
+  });
+});
+
+// POST /api/v1/users  (super-admin — create a new admin account directly)
+const createAdminUser = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password, role = 'admin' } = req.body;
+
+  if (!name || !email || !password) throw new AppError('Name, email, and password are required', 400);
+  if (!['admin', 'super-admin'].includes(role)) throw new AppError('Role must be admin or super-admin', 400);
+
+  const existing = await User.findOne({ email });
+  if (existing) throw new AppError('A user with this email already exists', 409);
+
+  const user = await User.create({ name, email, password, role, isVerified: true });
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: 'Admin account created successfully',
     data: user,
   });
 });
 
 // DELETE /api/v1/users/:id  (admin)
 const deleteUser = asyncHandler(async (req: Request, res: Response) => {
-  const user = await User.findByIdAndDelete(req.params.id);
-  if (!user) throw new AppError('User not found', 404);
+  const target = await User.findById(req.params.id);
+  if (!target) throw new AppError('User not found', 404);
+
+  // Prevent deleting any super-admin account
+  if (target.role === 'super-admin') {
+    throw new AppError('Super-admin accounts cannot be deleted', 403);
+  }
+
+  // Regular admin cannot delete another admin
+  if (target.role === 'admin' && req.user!.role !== 'super-admin') {
+    throw new AppError('Only a super-admin can delete admin accounts', 403);
+  }
+
+  await target.deleteOne();
 
   sendResponse(res, {
     statusCode: 200,
@@ -136,5 +181,6 @@ export const userControllers = {
   getAllUsers,
   getUserById,
   updateUserRole,
+  createAdminUser,
   deleteUser,
 };
