@@ -22,6 +22,34 @@ const updateProductRating = async (productId: string) => {
   }
 };
 
+// GET /api/v1/reviews  (admin — all reviews with pagination + filters)
+const getAllReviews = asyncHandler(async (req: Request, res: Response) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Number(req.query.limit) || 15);
+  const skip = (page - 1) * limit;
+
+  const filter: Record<string, any> = {};
+  if (req.query.rating) filter.rating = Number(req.query.rating);
+
+  const [reviews, total] = await Promise.all([
+    Review.find(filter)
+      .populate('userId', 'name avatar')
+      .populate('productId', 'title images')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Review.countDocuments(filter),
+  ]);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Reviews retrieved successfully',
+    data: reviews,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
+});
+
 // POST /api/v1/reviews
 const addReview = asyncHandler(async (req: Request, res: Response) => {
   const { productId, rating, comment } = req.body;
@@ -111,7 +139,8 @@ const deleteReview = asyncHandler(async (req: Request, res: Response) => {
   if (!review) throw new AppError('Review not found', 404);
 
   const isOwner = String(review.userId) === req.user!.id;
-  if (!isOwner && req.user!.role !== 'admin') {
+  const isPrivileged = req.user!.role === 'admin' || req.user!.role === 'super-admin';
+  if (!isOwner && !isPrivileged) {
     throw new AppError('Not authorized to delete this review', 403);
   }
 
@@ -126,4 +155,4 @@ const deleteReview = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export const reviewControllers = { addReview, getProductReviews, getMyReviews, updateReview, deleteReview };
+export const reviewControllers = { getAllReviews, addReview, getProductReviews, getMyReviews, updateReview, deleteReview };
