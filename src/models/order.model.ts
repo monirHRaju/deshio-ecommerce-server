@@ -40,6 +40,12 @@ const orderSchema = new Schema<IOrder>(
     deliveryZoneId: { type: Schema.Types.ObjectId, ref: 'DeliveryZone' },
     deliveryCharge: { type: Number, default: 0 },
     orderNote: { type: String },
+    mobilePayment: {
+      paymentMethodId: { type: Schema.Types.ObjectId, ref: 'PaymentMethod' },
+      paymentMethodName: { type: String },
+      mobileLast4: { type: String },
+      transactionId: { type: String },
+    },
   },
   { timestamps: true }
 );

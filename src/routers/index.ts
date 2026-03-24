@@ -9,6 +9,7 @@ import { DeliveryZoneRoutes } from './deliveryZone.routes';
 import { OrderRoutes } from './order.routes';
 import { ProductRoutes } from './product.route';
 import { ReviewRoutes } from './review.routes';
+import { PaymentMethodRoutes } from './paymentMethod.routes';
 import { UserRoutes } from './user.router';
 
 const router = express.Router();
@@ -23,6 +24,7 @@ const moduleRoutes = [
   { path: '/orders', route: OrderRoutes },
   { path: '/coupons', route: CouponRoutes },
   { path: '/delivery-zones', route: DeliveryZoneRoutes },
+  { path: '/payment-methods', route: PaymentMethodRoutes },
   { path: '/dashboard', route: DashboardRoutes },
   { path: '/ai', route: AiRoutes },
 ];

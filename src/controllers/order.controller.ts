@@ -3,6 +3,7 @@ import Cart from '../models/cart.model';
 import Coupon from '../models/coupon.model';
 import DeliveryZone from '../models/deliveryZone.model';
 import Order from '../models/order.model';
+import PaymentMethod from '../models/paymentMethod.model';
 import Product from '../models/product.model';
 import User from '../models/user.model';
 import AppError from '../utils/AppError';
@@ -11,7 +12,7 @@ import sendResponse from '../utils/sendResponse';
 
 // POST /api/v1/orders  { shippingAddress, paymentMethod, deliveryZoneId?, couponCode?, orderNote? }
 const createOrder = asyncHandler(async (req: Request, res: Response) => {
-  const { shippingAddress, paymentMethod = 'card', deliveryZoneId, couponCode, orderNote } = req.body;
+  const { shippingAddress, paymentMethod = 'card', deliveryZoneId, couponCode, orderNote, mobilePayment } = req.body;
   if (!shippingAddress) throw new AppError('Shipping address is required', 400);
 
   // Require verified email to place orders
@@ -79,6 +80,25 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
 
   const totalAmount = Math.max(0, itemsTotal + deliveryCharge - couponDiscount);
 
+  // ── Mobile payment validation ───────────────────────────────────────────────
+  let resolvedMobilePayment: Record<string, any> | undefined;
+  if (paymentMethod === 'mobile_banking') {
+    if (!mobilePayment?.paymentMethodId || !mobilePayment?.mobileLast4 || !mobilePayment?.transactionId) {
+      throw new AppError('Mobile payment details (payment method, last 4 digits, transaction ID) are required', 400);
+    }
+    if (!/^\d{4}$/.test(mobilePayment.mobileLast4)) {
+      throw new AppError('Mobile last 4 digits must be exactly 4 digits', 400);
+    }
+    const method = await PaymentMethod.findById(mobilePayment.paymentMethodId);
+    if (!method || !method.isActive) throw new AppError('Selected payment method is unavailable', 400);
+    resolvedMobilePayment = {
+      paymentMethodId: method._id,
+      paymentMethodName: method.name,
+      mobileLast4: mobilePayment.mobileLast4,
+      transactionId: mobilePayment.transactionId.trim(),
+    };
+  }
+
   const order = await Order.create({
     userId: req.user!.id,
     items: orderItems,
@@ -90,6 +110,7 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     couponCode: appliedCouponCode,
     couponDiscount,
     orderNote: orderNote || undefined,
+    mobilePayment: resolvedMobilePayment,
   });
 
   // Clear cart after order

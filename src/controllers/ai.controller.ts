@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import Product from '../models/product.model';
+import Category from '../models/category.model';
 import Review from '../models/review.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
@@ -168,9 +170,83 @@ ${reviewLines}`;
   });
 });
 
+// POST /api/v1/ai/chat  (public — no auth required)
+// Body: { message, history: { role: 'user' | 'model', content: string }[] }
+const chatWithAssistant = asyncHandler(async (req: Request, res: Response) => {
+  const { message, history } = req.body;
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    throw new AppError('Message is required', 400);
+  }
+
+  // Fetch store context
+  const [products, categories] = await Promise.all([
+    Product.find({})
+      .select('title price brand rating stock discount')
+      .populate('category', 'name')
+      .limit(100)
+      .lean(),
+    Category.find({}).select('name slug').lean(),
+  ]);
+
+  const categoryList = categories.map((c) => c.name).join(', ');
+  const productList = products
+    .map((p) => {
+      const catName = typeof p.category === 'object' && p.category !== null ? (p.category as any).name : 'Uncategorized';
+      const stockStatus = p.stock === 0 ? 'OUT OF STOCK' : `${p.stock} in stock`;
+      const discount = p.discount ?? 0;
+      const priceStr = discount > 0 ? `$${(p.price * (1 - discount / 100)).toFixed(2)} (was $${p.price})` : `$${p.price}`;
+      return `- ${p.title} | ${catName} | ${priceStr}${p.brand ? ` | ${p.brand}` : ''} | Rating: ${p.rating}/5 | ${stockStatus}`;
+    })
+    .join('\n');
+
+  const systemPrompt = `You are "Deshio Assistant", a friendly and knowledgeable shopping assistant for Deshio, a modern electronics e-commerce store.
+
+Your capabilities:
+- Help customers find products by describing what they need
+- Answer questions about specific products (specs, pricing, availability)
+- Compare products and make recommendations
+- Provide information about categories and brands available in the store
+
+Rules:
+- Be concise and helpful. Keep responses under 150 words unless the user asks for detail.
+- When recommending products, mention the product name, price, and a key highlight.
+- If a product is out of stock (stock = 0), mention that it is currently unavailable.
+- Do not make up products that are not in the catalog below.
+- Use a warm, conversational tone.
+- If the user asks about orders, returns, or shipping, let them know they can check their account page or contact support.
+
+=== STORE CATALOG ===
+Categories: ${categoryList}
+
+Products:
+${productList}
+=== END CATALOG ===`;
+
+  // Build conversation string from history (truncate to last 20 messages)
+  const recentHistory = Array.isArray(history) ? history.slice(-20) : [];
+  const conversationLines = recentHistory
+    .map((h: { role: string; content: string }) =>
+      h.role === 'user' ? `Customer: ${h.content}` : `Assistant: ${h.content}`
+    )
+    .join('\n');
+
+  const fullPrompt = `${systemPrompt}\n\n${conversationLines ? `Conversation so far:\n${conversationLines}\n\n` : ''}Customer: ${message.trim()}`;
+
+  const result = await geminiModel.generateContent(fullPrompt);
+  const reply = result.response.text().trim();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Chat response generated',
+    data: { reply },
+  });
+});
+
 export const aiControllers = {
   generateProductDescription,
   generateProductTags,
   smartSearch,
   summarizeReviews,
+  chatWithAssistant,
 };

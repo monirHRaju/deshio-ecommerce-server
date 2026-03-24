@@ -111,8 +111,26 @@ export interface IOrder {
   deliveryZoneId?: Types.ObjectId;
   deliveryCharge?: number;
   orderNote?: string;
+  mobilePayment?: {
+    paymentMethodId?: Types.ObjectId;
+    paymentMethodName?: string;
+    mobileLast4?: string;
+    transactionId?: string;
+  };
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+// ─── Payment Method ──────────────────────────────────────────────────────────
+export interface IPaymentMethod {
+  _id?: Types.ObjectId;
+  name: string;
+  type: string;
+  instructions: string;
+  phoneNumber?: string;
+  qrImage?: string;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 // ─── Coupon ───────────────────────────────────────────────────────────────────

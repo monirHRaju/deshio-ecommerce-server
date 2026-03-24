@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public (no auth required)
 router.post('/summarize-reviews', aiControllers.summarizeReviews);
+router.post('/chat', aiControllers.chatWithAssistant);
 
 // Protected
 router.use(authenticate);
