@@ -10,7 +10,7 @@ const app: Application = express();
 app.use(express.json());
 
 // CORS — allow all configured origins (comma-separated PUBLIC_URL supports multiple)
-const allowedOrigins = (process.env.PUBLIC_URL || 'http://localhost:3000')
+const allowedOrigins = (process.env.PUBLIC_URL || 'http://localhost:3000', 'http://localhost:3001')
   .split(',')
   .map((o) => o.trim());
 
