@@ -9,10 +9,13 @@ const app: Application = express();
 // Parsers
 app.use(express.json());
 
-// CORS — allow all configured origins (comma-separated PUBLIC_URL supports multiple)
-const allowedOrigins = (process.env.PUBLIC_URL || 'http://localhost:3000', 'http://localhost:3001')
-  .split(',')
-  .map((o) => o.trim());
+// CORS — allow all configured origins
+const allowedOrigins = [
+  process.env.PUBLIC_URL,
+  process.env.PUBLIC_ADMIN_URL,
+  'http://localhost:3000',
+  'http://localhost:3001',
+].filter(Boolean) as string[];
 
 app.use(
   cors({
