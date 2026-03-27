@@ -195,7 +195,7 @@ const chatWithAssistant = asyncHandler(async (req: Request, res: Response) => {
       const catName = typeof p.category === 'object' && p.category !== null ? (p.category as any).name : 'Uncategorized';
       const stockStatus = p.stock === 0 ? 'OUT OF STOCK' : `${p.stock} in stock`;
       const discount = p.discount ?? 0;
-      const priceStr = discount > 0 ? `$${(p.price * (1 - discount / 100)).toFixed(2)} (was $${p.price})` : `$${p.price}`;
+      const priceStr = discount > 0 ? `৳${(p.price * (1 - discount / 100)).toFixed(2)} (was ৳${p.price})` : `৳${p.price}`;
       return `- ${p.title} | ${catName} | ${priceStr}${p.brand ? ` | ${p.brand}` : ''} | Rating: ${p.rating}/5 | ${stockStatus}`;
     })
     .join('\n');
