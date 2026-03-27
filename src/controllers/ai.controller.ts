@@ -4,7 +4,8 @@ import Category from '../models/category.model';
 import Review from '../models/review.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
-import { geminiModel } from '../utils/gemini';
+import { geminiModelForChat } from '../utils/gemini';
+import { geminiModelTags } from '../utils/gemini';
 import sendResponse from '../utils/sendResponse';
 
 // POST /api/v1/ai/generate-description
@@ -37,7 +38,7 @@ Key Features:
 
 [1 sentence call-to-action]`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await geminiModelTags.generateContent(prompt);
   const description = result.response.text();
 
   sendResponse(res, {
@@ -61,7 +62,7 @@ Category: ${category}
 Return ONLY a JSON array of lowercase strings. Example: ["tag1", "tag2", "tag3"]
 No explanation, just the JSON array.`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await geminiModelTags.generateContent(prompt);
   const text = result.response.text().trim();
 
   let tags: string[] = [];
@@ -107,7 +108,7 @@ Return ONLY a valid JSON object with these optional fields:
 
 No explanation, just the JSON object.`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await geminiModelTags.generateContent(prompt);
   const text = result.response.text().trim();
 
   let filters: Record<string, any> = {};
@@ -159,7 +160,7 @@ Be objective, helpful, and conversational. Do NOT use bullet points.
 Reviews:
 ${reviewLines}`;
 
-  const result = await geminiModel.generateContent(prompt);
+  const result = await geminiModelTags.generateContent(prompt);
   const summary = result.response.text().trim();
 
   sendResponse(res, {
@@ -232,7 +233,7 @@ ${productList}
 
   const fullPrompt = `${systemPrompt}\n\n${conversationLines ? `Conversation so far:\n${conversationLines}\n\n` : ''}Customer: ${message.trim()}`;
 
-  const result = await geminiModel.generateContent(fullPrompt);
+  const result = await geminiModelForChat.generateContent(fullPrompt);
   const reply = result.response.text().trim();
 
   sendResponse(res, {
