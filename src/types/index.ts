@@ -103,6 +103,7 @@ export interface IOrder {
   items: IOrderItem[];
   totalAmount: number;
   shippingAddress: IAddress;
+  phone: string;
   paymentMethod: string;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;

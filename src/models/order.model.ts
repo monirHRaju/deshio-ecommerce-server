@@ -24,6 +24,7 @@ const orderSchema = new Schema<IOrder>(
       country: { type: String },
       zip: { type: String },
     },
+    phone: { type: String, required: true },
     paymentMethod: { type: String, required: true, default: 'card' },
     paymentStatus: {
       type: String,

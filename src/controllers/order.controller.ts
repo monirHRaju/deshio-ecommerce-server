@@ -12,8 +12,9 @@ import sendResponse from '../utils/sendResponse';
 
 // POST /api/v1/orders  { shippingAddress, paymentMethod, deliveryZoneId?, couponCode?, orderNote? }
 const createOrder = asyncHandler(async (req: Request, res: Response) => {
-  const { shippingAddress, paymentMethod = 'card', deliveryZoneId, couponCode, orderNote, mobilePayment } = req.body;
+  const { shippingAddress, phone, paymentMethod = 'card', deliveryZoneId, couponCode, orderNote, mobilePayment } = req.body;
   if (!shippingAddress) throw new AppError('Shipping address is required', 400);
+  if (!phone) throw new AppError('Mobile number is required', 400);
 
   // Require verified email to place orders
   const buyer = await User.findById(req.user!.id);
@@ -104,6 +105,7 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     items: orderItems,
     totalAmount,
     shippingAddress,
+    phone,
     paymentMethod,
     deliveryZoneId: resolvedDeliveryZoneId,
     deliveryCharge,
