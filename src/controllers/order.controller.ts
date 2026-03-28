@@ -80,7 +80,10 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
   }
 
-  const totalAmount = Math.max(0, itemsTotal + deliveryCharge - couponDiscount);
+  // ── COD processing fee ─────────────────────────────────────────────────────
+  const codProcessingFee = paymentMethod === 'cash_on_delivery' ? 20 : 0;
+
+  const totalAmount = Math.max(0, itemsTotal + deliveryCharge - couponDiscount + codProcessingFee);
 
   // ── Mobile payment validation ───────────────────────────────────────────────
   let resolvedMobilePayment: Record<string, any> | undefined;
@@ -110,6 +113,7 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     paymentMethod,
     deliveryZoneId: resolvedDeliveryZoneId,
     deliveryCharge,
+    codProcessingFee,
     couponCode: appliedCouponCode,
     couponDiscount,
     orderNote: orderNote || undefined,

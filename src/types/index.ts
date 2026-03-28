@@ -111,6 +111,7 @@ export interface IOrder {
   couponDiscount?: number;
   deliveryZoneId?: Types.ObjectId;
   deliveryCharge?: number;
+  codProcessingFee?: number;
   orderNote?: string;
   mobilePayment?: {
     paymentMethodId?: Types.ObjectId;

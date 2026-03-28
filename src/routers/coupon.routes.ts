@@ -11,6 +11,7 @@ router.post('/validate', couponControllers.validateCoupon);
 // Admin only
 router.get('/', authenticate, authorize('admin'), couponControllers.getCoupons);
 router.post('/', authenticate, authorize('admin'), couponControllers.createCoupon);
+router.patch('/:id', authenticate, authorize('admin'), couponControllers.updateCoupon);
 router.delete('/:id', authenticate, authorize('admin'), couponControllers.deleteCoupon);
 
 export const CouponRoutes = router;

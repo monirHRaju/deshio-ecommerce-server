@@ -83,6 +83,30 @@ const createCoupon = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+// PATCH /api/v1/coupons/:id  (admin)
+const updateCoupon = asyncHandler(async (req: Request, res: Response) => {
+  const { description, type, value, minOrderAmount, maxUses, expiresAt, isActive } = req.body;
+
+  const update: Record<string, any> = {};
+  if (description !== undefined) update.description = description;
+  if (type !== undefined) update.type = type;
+  if (value !== undefined) update.value = value;
+  if (minOrderAmount !== undefined) update.minOrderAmount = minOrderAmount;
+  if (maxUses !== undefined) update.maxUses = maxUses;
+  if (expiresAt !== undefined) update.expiresAt = expiresAt || null;
+  if (isActive !== undefined) update.isActive = isActive;
+
+  const coupon = await Coupon.findByIdAndUpdate(req.params.id, update, { new: true });
+  if (!coupon) throw new AppError('Coupon not found', 404);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Coupon updated successfully',
+    data: coupon,
+  });
+});
+
 // DELETE /api/v1/coupons/:id  (admin)
 const deleteCoupon = asyncHandler(async (req: Request, res: Response) => {
   const coupon = await Coupon.findByIdAndDelete(req.params.id);
@@ -95,4 +119,4 @@ const deleteCoupon = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-export const couponControllers = { validateCoupon, getCoupons, createCoupon, deleteCoupon };
+export const couponControllers = { validateCoupon, getCoupons, createCoupon, updateCoupon, deleteCoupon };
