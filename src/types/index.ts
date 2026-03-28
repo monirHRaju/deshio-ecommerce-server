@@ -157,6 +157,21 @@ export interface IDeliveryZone {
   isActive: boolean;
 }
 
+// ─── Notification ────────────────────────────────────────────────────────────
+export type NotificationType = 'order' | 'product' | 'payment' | 'user' | 'review' | 'system';
+
+export interface INotification {
+  _id?: Types.ObjectId;
+  type: NotificationType;
+  title: string;
+  message: string;
+  referenceId?: Types.ObjectId;
+  referenceModel?: 'Order' | 'Product' | 'User' | 'Review';
+  isRead: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 // ─── JWT ─────────────────────────────────────────────────────────────────────
 export interface JwtPayload {
   id: string;

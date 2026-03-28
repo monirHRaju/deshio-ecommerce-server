@@ -5,6 +5,7 @@ import { CartRoutes } from './cart.routes';
 import { CategoryRoutes } from './category.routes';
 import { CouponRoutes } from './coupon.routes';
 import { DashboardRoutes } from './dashboard.routes';
+import { NotificationRoutes } from './notification.routes';
 import { DeliveryZoneRoutes } from './deliveryZone.routes';
 import { OrderRoutes } from './order.routes';
 import { ProductRoutes } from './product.route';
@@ -26,6 +27,7 @@ const moduleRoutes = [
   { path: '/delivery-zones', route: DeliveryZoneRoutes },
   { path: '/payment-methods', route: PaymentMethodRoutes },
   { path: '/dashboard', route: DashboardRoutes },
+  { path: '/notifications', route: NotificationRoutes },
   { path: '/ai', route: AiRoutes },
 ];
 

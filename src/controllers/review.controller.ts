@@ -3,6 +3,7 @@ import Product from '../models/product.model';
 import Review from '../models/review.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
+import { createNotification } from '../utils/notificationService';
 import sendResponse from '../utils/sendResponse';
 
 // Recalculate and update product rating + reviewCount
@@ -62,6 +63,15 @@ const addReview = asyncHandler(async (req: Request, res: Response) => {
 
   const review = await Review.create({ userId: req.user!.id, productId, rating, comment });
   await updateProductRating(productId);
+
+  // Notification: new review submitted
+  createNotification({
+    type: 'review',
+    title: 'New Review Submitted',
+    message: `${rating}-star review on "${product.title}"`,
+    referenceId: review._id,
+    referenceModel: 'Review',
+  }).catch(console.error);
 
   const populated = await review.populate('userId', 'name avatar');
 

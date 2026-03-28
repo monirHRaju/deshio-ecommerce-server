@@ -8,6 +8,7 @@ import Product from '../models/product.model';
 import User from '../models/user.model';
 import AppError from '../utils/AppError';
 import asyncHandler from '../utils/asyncHandler';
+import { createNotification, LOW_STOCK_THRESHOLD } from '../utils/notificationService';
 import sendResponse from '../utils/sendResponse';
 
 // POST /api/v1/orders  { shippingAddress, paymentMethod, deliveryZoneId?, couponCode?, orderNote? }
@@ -115,6 +116,29 @@ const createOrder = asyncHandler(async (req: Request, res: Response) => {
     mobilePayment: resolvedMobilePayment,
   });
 
+  // Notification: new order placed
+  createNotification({
+    type: 'order',
+    title: 'New Order Placed',
+    message: `Order ${order.orderNumber} placed for ৳${order.totalAmount.toLocaleString()}`,
+    referenceId: order._id,
+    referenceModel: 'Order',
+  }).catch(console.error);
+
+  // Notification: low stock alerts
+  for (const item of orderItems) {
+    const updatedProduct = await Product.findById(item.productId).select('stock title');
+    if (updatedProduct && updatedProduct.stock <= LOW_STOCK_THRESHOLD) {
+      createNotification({
+        type: 'product',
+        title: 'Low Stock Alert',
+        message: `"${updatedProduct.title}" has only ${updatedProduct.stock} units remaining`,
+        referenceId: updatedProduct._id,
+        referenceModel: 'Product',
+      }).catch(console.error);
+    }
+  }
+
   // Clear cart after order
   await Cart.findOneAndUpdate({ userId: req.user!.id }, { items: [], totalAmount: 0 });
 
@@ -212,6 +236,15 @@ const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
 
   order.orderStatus = 'cancelled';
   await order.save();
+
+  // Notification: order cancelled
+  createNotification({
+    type: 'order',
+    title: 'Order Cancelled',
+    message: `Order ${order.orderNumber} was cancelled by the customer`,
+    referenceId: order._id,
+    referenceModel: 'Order',
+  }).catch(console.error);
 
   sendResponse(res, {
     statusCode: 200,

@@ -9,6 +9,7 @@ import { IUser, JwtPayload } from '../types';
 import AppError from '../utils/AppError';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../utils/email';
 import asyncHandler from '../utils/asyncHandler';
+import { createNotification } from '../utils/notificationService';
 import sendResponse from '../utils/sendResponse';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -50,6 +51,15 @@ const register = asyncHandler(async (req: Request, res: Response) => {
     verificationToken,
     verificationTokenExpires,
   });
+
+  // Notification: new user registered
+  createNotification({
+    type: 'user',
+    title: 'New User Registered',
+    message: `${user.name} (${user.email}) has registered`,
+    referenceId: user._id,
+    referenceModel: 'User',
+  }).catch(console.error);
 
   // Send verification email (non-blocking)
   sendVerificationEmail(name, email, verificationToken).catch((err) => {
